@@ -1,0 +1,44 @@
+name: PR Summary & Lint Bot
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Python & Pylint
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3 python3-pip
+          pip3 install pylint
+
+      - name: Run pylint on hello.py
+        id: lint
+        run: |
+          echo "Running pylint..."
+          pylint hello.py --output-format=parseable > pylint-report.txt || true
+          echo "Pylint finished"
+
+      - name: Prepare comment body
+        id: prepare
+        run: |
+          echo "### 👋 PR Summary" > body.txt
+          echo "Files changed in this PR:" >> body.txt
+          git diff --name-only origin/${{ github.base_ref }} >> body.txt
+          echo -e "\n#### 📝 Pylint Suggestions\n\`\`\`" >> body.txt
+          cat pylint-report.txt >> body.txt
+          echo "\`\`\`" >> body.txt
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          cat body.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Comment on PR
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: PR Analysis
+          message: ${{ steps.prepare.outputs.body }}
