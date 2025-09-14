@@ -29,7 +29,7 @@ jobs:
         run: |
           echo "### 👋 PR Summary" > body.txt
           echo "Files changed in this PR:" >> body.txt
-          git diff --name-only origin/${{ github.base_ref }} >> body.txt
+          git diff --name-only ${{ github.event.before }} ${{ github.sha }} >> body.txt
           echo -e "\n#### 📝 Pylint Suggestions\n\`\`\`" >> body.txt
           cat pylint-report.txt >> body.txt
           echo "\`\`\`" >> body.txt
